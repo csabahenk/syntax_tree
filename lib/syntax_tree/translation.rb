@@ -10,8 +10,9 @@ module SyntaxTree
     def self.to_parser(node, buffer)
       require "parser"
       require_relative "translation/parser"
+      require_relative "translation/tokenize"
 
-      node.accept(Parser.new(buffer))
+      [node.accept(Parser.new(buffer)), [], Tokenize.new(buffer).tokenize]
     end
 
     # This method translates the given node into the representation defined by
@@ -21,8 +22,9 @@ module SyntaxTree
       require "rubocop/ast"
       require_relative "translation/parser"
       require_relative "translation/rubocop_ast"
+      require_relative "translation/tokenize"
 
-      node.accept(RuboCopAST.new(buffer))
+      [node.accept(Parser.new(buffer)), [], Tokenize.new(buffer).tokenize]
     end
   end
 end

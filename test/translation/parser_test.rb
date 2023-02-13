@@ -124,18 +124,22 @@ module SyntaxTree
         buffer = ::Parser::Source::Buffer.new("(string)", 1)
         buffer.source = source
 
-        expected =
+        expected_ast, _, expected_tokens =
           begin
-            parser.parse(buffer)
+            parser.tokenize(buffer)
           rescue ::Parser::SyntaxError
             # We can get a syntax error if we're parsing a fixture that was
             # designed for a later Ruby version but we're running an earlier
             # Ruby version. In this case we can just return early from the test.
           end
 
-        return if expected.nil?
+        return if expected_ast.nil?
         node = SyntaxTree.parse(source)
-        assert_equal expected, SyntaxTree::Translation.to_parser(node, buffer)
+
+        ast, _, tokens = SyntaxTree::Translation.to_parser(node, buffer)
+
+        assert_equal expected_ast, ast
+        assert_equal expected_tokens, tokens
       end
     end
   end

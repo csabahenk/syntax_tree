@@ -25,13 +25,13 @@ Parser::Source::Map.prepend(
 
 # Next, ensure that we're comparing the nodes and also comparing the source
 # ranges so that we're getting all of the necessary information.
-Parser::AST::Node.prepend(
-  Module.new {
-    def ==(other)
-      super && (location == other.location)
-    end
-  }
-)
+# Parser::AST::Node.prepend(
+#   Module.new {
+#     def ==(other)
+#       super && (location == other.location)
+#     end
+#   }
+# )
 
 source = ARGF.read
 
@@ -41,39 +41,49 @@ parser.diagnostics.all_errors_are_fatal = true
 buffer = Parser::Source::Buffer.new("(string)", 1)
 buffer.source = source.dup.force_encoding(parser.default_encoding)
 
-stree = SyntaxTree::Translation.to_parser(SyntaxTree.parse(source), buffer)
-ptree = parser.parse(buffer)
+stree, _, stree_tokens = SyntaxTree::Translation.to_parser(SyntaxTree.parse(source), buffer)
+ptree, _, ptree_tokens = parser.tokenize(buffer)
 
-if stree == ptree
-  puts "Syntax trees are equivalent."
-elsif stree.inspect == ptree.inspect
-  warn "Syntax tree locations are different."
+if stree != ptree
+  if stree.inspect == ptree.inspect
+    warn "Syntax tree locations are different."
 
-  queue = [[stree, ptree]]
-  while (left, right = queue.shift)
-    if left.location != right.location
-      warn "Different node:"
-      pp left
+    queue = [[stree, ptree]]
+    while (left, right = queue.shift)
+      if left.location != right.location
+        warn "Different node:"
+        pp left
 
-      warn "Different location:"
+        warn "Different location:"
 
-      warn "Syntax Tree:"
-      pp left.location
+        warn "Syntax Tree:"
+        pp left.location
 
-      warn "whitequark/parser:"
-      pp right.location
+        warn "whitequark/parser:"
+        pp right.location
 
-      exit
+        exit
+      end
+
+      left.children.zip(right.children).each do |left_child, right_child|
+        queue << [left_child, right_child] if left_child.is_a?(Parser::AST::Node)
+      end
     end
+  else
+    warn "Syntax Tree:"
+    pp stree
 
-    left.children.zip(right.children).each do |left_child, right_child|
-      queue << [left_child, right_child] if left_child.is_a?(Parser::AST::Node)
-    end
+    warn "whitequark/parser:"
+    pp ptree
   end
-else
+elsif stree_tokens != ptree_tokens
+  warn "Tokens are different."
+
   warn "Syntax Tree:"
-  pp stree
+  pp stree_tokens
 
   warn "whitequark/parser:"
-  pp ptree
+  pp ptree_tokens
+else
+  puts "OK"
 end
