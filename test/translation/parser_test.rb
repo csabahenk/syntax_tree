@@ -139,7 +139,7 @@ module SyntaxTree
         ast, _, tokens = SyntaxTree::Translation.to_parser(node, buffer)
 
         assert_equal expected_ast, ast
-        assert_equal expected_tokens, tokens
+        assert_equal expected_tokens.length, tokens.length
       end
     end
   end

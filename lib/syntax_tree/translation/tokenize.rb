@@ -19,17 +19,13 @@ module SyntaxTree
         on_gvar: :tGVAR,
         on_ivar: :tIVAR,
         on_period: :tDOT,
-        on_qsymbols_beg: :tQSYMBOLS_BEG,
-        on_qwords_beg: :tQWORDS_BEG,
         on_rbrace: :tRCURLY,
         on_rbracket: :tRBRACK,
         on_regexp_beg: :tREGEXP_BEG,
         on_rparen: :tRPAREN,
         on_semicolon: :tSEMI,
-        on_symbols_beg: :tSYMBOLS_BEG,
         on_tlambda: :tLAMBDA,
-        on_tlambeg: :tLAMBEG,
-        on_words_beg: :tWORDS_BEG
+        on_tlambeg: :tLAMBEG
       }.freeze
 
       KEYWORD_MAPPING = {
@@ -271,6 +267,12 @@ module SyntaxTree
               else
                 results << [OPERATOR_MAPPING.fetch(value), [value, range]]
               end
+            when :on_qsymbols_beg
+              results << [:tQSYMBOLS_BEG, [value, range]]
+              index += 1 if tokens[index + 1][1] == :on_words_sep
+            when :on_qwords_beg
+              results << [:tQWORDS_BEG, [value, range]]
+              index += 1 if tokens[index + 1][1] == :on_words_sep
             when :on_rational
               results << [:tRATIONAL, [value.to_r, range]]
             when :on_regexp_end
@@ -288,6 +290,9 @@ module SyntaxTree
               else
                 results << [:tSYMBEG, [value, range]]
               end
+            when :on_symbols_beg
+              results << [:tSYMBOLS_BEG, [value, range]]
+              index += 1 if tokens[index + 1][1] == :on_words_sep
             when :on_tstring_beg
               if (value == "\"" || value == "'") && tokens[index + 1][1] == :on_tstring_content && tokens[index + 2][1] == :on_tstring_end
                 ((lineno, column), _, value, *) = tokens[index + 2]
@@ -302,6 +307,9 @@ module SyntaxTree
               results << [:tSTRING_CONTENT, [value, range]]
             when :on_tstring_end
               results << [:tSTRING_END, [value, range]]
+            when :on_words_beg
+              results << [:tWORDS_BEG, [value, range]]
+              index += 1 if tokens[index + 1][1] == :on_words_sep
             when :on_words_sep
               results << [:tSPACE, [nil, range]]
             else
